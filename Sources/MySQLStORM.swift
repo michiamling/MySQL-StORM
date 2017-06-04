@@ -133,48 +133,65 @@ open class MySQLStORM: StORM, StORMProtocol {
 	// Returns a processed row set
 	@discardableResult
 	func execRows(_ statement: String, params: [String]) throws -> [StORMRow] {
-		let thisConnection = MySQLConnect(
+        
+        var resultRows : [StORMRow] = []
+
+        
+        let connectionPool = ConnectionPool.sharedPoolInstance
+        connectionPool.setOptions(options:
+            StORMDataSourceCredentials(host: MySQLConnector.host,
+                                       port: MySQLConnector.port,
+                                       user: MySQLConnector.username,
+                                       pass: MySQLConnector.password))
+        
+        
+		/*let thisConnection = MySQLConnect(
 			host:		MySQLConnector.host,
 			username:	MySQLConnector.username,
 			password:	MySQLConnector.password,
 			database:	MySQLConnector.database,
 			port:		MySQLConnector.port
-		)
+		
 
-		thisConnection.open()
+		thisConnection.open()*/
 		//		defer { thisConnection.server.close() }
-		thisConnection.statement = statement
+        
+        if let thisConnection = try connectionPool.getConnection() {
+        
+            thisConnection.statement = statement
 
-		printDebug(statement, params)
+            printDebug(statement, params)
 
-		lastStatement = MySQLStmt(thisConnection.server)
-		var res = lastStatement?.prepare(statement: statement)
-		guard res! else {
-			throw StORMError.error(thisConnection.server.errorMessage())
-		}
+            lastStatement = MySQLStmt(thisConnection.server)
+            var res = lastStatement?.prepare(statement: statement)
+            guard res! else {
+                throw StORMError.error(thisConnection.server.errorMessage())
+            }
 
-		for p in params {
-			lastStatement?.bindParam(p)
-		}
+            for p in params {
+                lastStatement?.bindParam(p)
+            }
 
-		res = lastStatement?.execute()
+            res = lastStatement?.execute()
 
-		for index in 0..<Int((lastStatement?.fieldCount())!) {
-			let this = lastStatement?.fieldInfo(index: index)!
-			results.fieldInfo[this!.name] = String(describing: this!.type)
-		}
+            for index in 0..<Int((lastStatement?.fieldCount())!) {
+                let this = lastStatement?.fieldInfo(index: index)!
+                results.fieldInfo[this!.name] = String(describing: this!.type)
+            }
 
-		guard res! else {
-			throw StORMError.error(thisConnection.server.errorMessage())
-		}
+            guard res! else {
+                throw StORMError.error(thisConnection.server.errorMessage())
+            }
 
-		let result = lastStatement?.results()
+            let result = lastStatement?.results()
 
-		results.foundSetCount = (result?.numRows)!
-		results.fieldNames = fieldNamesToStringArray((lastStatement?.fieldNames())!)
+            results.foundSetCount = (result?.numRows)!
+            results.fieldNames = fieldNamesToStringArray((lastStatement?.fieldNames())!)
 
-		let resultRows = parseRows(result!, resultSet: results)
-		thisConnection.server.close()
+            resultRows = parseRows(result!, resultSet: results)
+            //thisConnection.server.close()
+            connectionPool.releaseConnection(thisConnection)
+        }
 		return resultRows
 	}
 

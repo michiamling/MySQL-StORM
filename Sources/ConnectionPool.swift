@@ -63,9 +63,9 @@ final public class ConnectionPool: CustomStringConvertible {
     
     private func preparedNewConnection() -> MySQLConnect {
         let thisConnection = MySQLConnect(
-            host:		MySQLConnector.host,
-            username:	MySQLConnector.username,
-            password:	MySQLConnector.password,
+            host:		(options?.host)!,
+            username:	(options?.username)!,
+            password:	(options?.password)!,
             database:	MySQLConnector.database,
             port:		MySQLConnector.port
         )
