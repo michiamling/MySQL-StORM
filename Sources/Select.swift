@@ -94,13 +94,13 @@ extension MySQLStORM {
 			clauseOrder = " ORDER BY \(orderby.joined(separator: ", "))"
 		}
 		do {
-			let getCount = try execRows("SELECT \(clauseCount) FROM \(table()) \(clauseWhere)", params: paramsString)
-			let numrecords = getCount[0].data["counter"]!
+			//let getCount = try execRows("SELECT \(clauseCount) FROM \(table()) \(clauseWhere)", params: paramsString)
+			//let numrecords = getCount[0].data["counter"]!
 
 			results.cursorData = StORMCursor(
 				limit: cursor.limit,
 				offset: cursor.offset,
-				totalRecords: Int(numrecords as! Int64))
+				totalRecords: 0)
 
 
 			// SELECT ASSEMBLE
@@ -118,6 +118,8 @@ extension MySQLStORM {
 
 			// save results into ResultSet
 			results.rows = try execRows(str, params: paramsString)
+            
+            results.cursorData.totalRecords = results.rows.count
 
 			// if just one row returned, act like a "GET"
 			if results.cursorData.totalRecords == 1 { makeRow() }
