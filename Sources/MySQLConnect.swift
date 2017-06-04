@@ -16,6 +16,8 @@ open class MySQLConnect: StORMConnect {
 
 	/// Server connection container
 	public let server = MySQL()
+    
+    public var isInUse = false
 
 
 	/// Init with no credentials
@@ -37,6 +39,10 @@ open class MySQLConnect: StORMConnect {
 		self.credentials = StORMDataSourceCredentials(host: host, port: port, user: username, pass: password)
 	}
 
+    public func ping() -> Bool {
+        
+        return true
+    }
 
 	/// Opens the connection
 	/// If an error is generated, the connection state will be output to console and to ./StORMlog.txt
