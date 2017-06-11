@@ -81,9 +81,7 @@ final public class ConnectionPool: CustomStringConvertible {
     //private let poolSemaphore = DispatchSemaphore(value: 1)
     
     private func getUsableConnection() -> MySQLConnect? {
-        
-        print("pool connection :"+String(pool.count))
-        
+                
         for c in pool {
             if c.isInUse == false && c.ping() == true {
                 c.isInUse = true
