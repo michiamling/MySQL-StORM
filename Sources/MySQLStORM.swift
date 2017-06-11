@@ -56,29 +56,43 @@ open class MySQLStORM: StORM, StORMProtocol {
 	// Returns raw result
 	@discardableResult
 	func exec(_ statement: String) throws -> MySQL.Results {
+        
+        var result : MySQL.Results!
 
-		let thisConnection = MySQLConnect(
-			host:		MySQLConnector.host,
-			username:	MySQLConnector.username,
-			password:	MySQLConnector.password,
-			database:	MySQLConnector.database,
-			port:		MySQLConnector.port
-		)
+        let connectionPool = ConnectionPool.sharedPoolInstance
+        connectionPool.setOptions(options:
+            StORMDataSourceCredentials(host: MySQLConnector.host,
+                                       port: MySQLConnector.port,
+                                       user: MySQLConnector.username,
+                                       pass: MySQLConnector.password))
+        
+        
+        /*let thisConnection = MySQLConnect(
+         host:		MySQLConnector.host,
+         username:	MySQLConnector.username,
+         password:	MySQLConnector.password,
+         database:	MySQLConnector.database,
+         port:		MySQLConnector.port
+         
+         
+         thisConnection.open()*/
+        //		defer { thisConnection.server.close() }
+        
+        if let thisConnection = try connectionPool.getConnection() {
+            
+            thisConnection.statement = statement
 
+            printDebug(statement, [])
+            let querySuccess = thisConnection.server.query(statement: statement)
 
+            guard querySuccess else {
+                throw StORMError.error(thisConnection.server.errorMessage())
+            }
+            result = thisConnection.server.storeResults()!
+            //thisConnection.server.close()
+            connectionPool.releaseConnection(thisConnection)
 
-		thisConnection.open()
-		//		defer { thisConnection.server.close() }
-		thisConnection.statement = statement
-
-		printDebug(statement, [])
-		let querySuccess = thisConnection.server.query(statement: statement)
-
-		guard querySuccess else {
-			throw StORMError.error(thisConnection.server.errorMessage())
-		}
-		let result = thisConnection.server.storeResults()!
-		thisConnection.server.close()
+        }
 		return result
 	}
 
@@ -92,41 +106,58 @@ open class MySQLStORM: StORM, StORMProtocol {
 
 	//	@discardableResult
 	func exec(_ statement: String, params: [String], isInsert: Bool = false) throws {
-		let thisConnection = MySQLConnect(
-			host:		MySQLConnector.host,
-			username:	MySQLConnector.username,
-			password:	MySQLConnector.password,
-			database:	MySQLConnector.database,
-			port:		MySQLConnector.port
-		)
-		thisConnection.open()
-		//		defer { thisConnection.server.close() }
-		thisConnection.statement = statement
+        let connectionPool = ConnectionPool.sharedPoolInstance
+        connectionPool.setOptions(options:
+            StORMDataSourceCredentials(host: MySQLConnector.host,
+                                       port: MySQLConnector.port,
+                                       user: MySQLConnector.username,
+                                       pass: MySQLConnector.password))
+        
+        
+        /*let thisConnection = MySQLConnect(
+         host:		MySQLConnector.host,
+         username:	MySQLConnector.username,
+         password:	MySQLConnector.password,
+         database:	MySQLConnector.database,
+         port:		MySQLConnector.port
+         
+         
+         thisConnection.open()*/
+        //		defer { thisConnection.server.close() }
+        
+        if let thisConnection = try connectionPool.getConnection() {
+            
+            //		defer { thisConnection.server.close() }
+            thisConnection.statement = statement
 
-		lastStatement = MySQLStmt(thisConnection.server)
-		defer { lastStatement?.close() }
-		var res = lastStatement?.prepare(statement: statement)
-		guard res! else {
-			throw StORMError.error(thisConnection.server.errorMessage())
-		}
+            lastStatement = MySQLStmt(thisConnection.server)
+            defer { lastStatement?.close() }
+            var res = lastStatement?.prepare(statement: statement)
+            guard res! else {
+                throw StORMError.error(thisConnection.server.errorMessage())
+            }
 
-		for p in params {
-			lastStatement?.bindParam(p)
-		}
+            for p in params {
+                lastStatement?.bindParam(p)
+            }
 
-		res = lastStatement?.execute()
-		guard res! else {
-			print(thisConnection.server.errorMessage())
-			print(thisConnection.server.errorCode())
-			throw StORMError.error(thisConnection.server.errorMessage())
-		}
+            res = lastStatement?.execute()
+            guard res! else {
+                print(thisConnection.server.errorMessage())
+                print(thisConnection.server.errorCode())
+                throw StORMError.error(thisConnection.server.errorMessage())
+            }
 
-		let result = lastStatement?.results()
-		results.foundSetCount = (result?.numRows)!
-		if isInsert {
-			results.insertedID = Int((lastStatement?.insertId())!)
-		}
-		thisConnection.server.close()
+            let result = lastStatement?.results()
+            results.foundSetCount = (result?.numRows)!
+            if isInsert {
+                results.insertedID = Int((lastStatement?.insertId())!)
+            }
+            connectionPool.releaseConnection(thisConnection)
+
+        }
+
+		//thisConnection.server.close()
 	}
 
 	// Internal function which executes statements, with parameter binding
@@ -184,6 +215,7 @@ open class MySQLStORM: StORM, StORMProtocol {
             }
 
             let result = lastStatement?.results()
+            
 
             results.foundSetCount = (result?.numRows)!
             results.fieldNames = fieldNamesToStringArray((lastStatement?.fieldNames())!)

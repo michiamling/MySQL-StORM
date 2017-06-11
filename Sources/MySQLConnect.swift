@@ -40,8 +40,8 @@ open class MySQLConnect: StORMConnect {
 	}
 
     public func ping() -> Bool {
-        
-        return true
+        return server.ping
+        //return true
     }
 
 	/// Opens the connection

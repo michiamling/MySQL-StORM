@@ -46,8 +46,12 @@ final public class ConnectionPool: CustomStringConvertible {
          type(of: self).libraryInitialized = true
          
          */
-        for _ in 0..<initialConnections {
-            _ = preparedNewConnection()
+        mutex.sync {
+            if pool.count < initialConnections {
+                for _ in 0..<initialConnections {
+                    _ = preparedNewConnection()
+                }
+            }
         }
     }
     
@@ -77,11 +81,19 @@ final public class ConnectionPool: CustomStringConvertible {
     //private let poolSemaphore = DispatchSemaphore(value: 1)
     
     private func getUsableConnection() -> MySQLConnect? {
+        
+        print("pool connection :"+String(pool.count))
+        
         for c in pool {
             if c.isInUse == false && c.ping() == true {
                 c.isInUse = true
                 return c
             }
+            
+            if c.isInUse == false && c.ping() == false {
+                print("broken")
+            }
+            
         }
         return nil
     }
