@@ -86,6 +86,7 @@ open class MySQLStORM: StORM, StORMProtocol {
             let querySuccess = thisConnection.server.query(statement: statement)
 
             guard querySuccess else {
+                connectionPool.releaseConnection(thisConnection)
                 throw StORMError.error(thisConnection.server.errorMessage())
             }
             result = thisConnection.server.storeResults()!
@@ -134,6 +135,7 @@ open class MySQLStORM: StORM, StORMProtocol {
             defer { lastStatement?.close() }
             var res = lastStatement?.prepare(statement: statement)
             guard res! else {
+                connectionPool.releaseConnection(thisConnection)
                 throw StORMError.error(thisConnection.server.errorMessage())
             }
 
@@ -145,6 +147,7 @@ open class MySQLStORM: StORM, StORMProtocol {
             guard res! else {
                 print(thisConnection.server.errorMessage())
                 print(thisConnection.server.errorCode())
+                connectionPool.releaseConnection(thisConnection)
                 throw StORMError.error(thisConnection.server.errorMessage())
             }
 
@@ -196,6 +199,7 @@ open class MySQLStORM: StORM, StORMProtocol {
             lastStatement = MySQLStmt(thisConnection.server)
             var res = lastStatement?.prepare(statement: statement)
             guard res! else {
+                connectionPool.releaseConnection(thisConnection)
                 throw StORMError.error(thisConnection.server.errorMessage())
             }
 
@@ -211,6 +215,7 @@ open class MySQLStORM: StORM, StORMProtocol {
             }
 
             guard res! else {
+                connectionPool.releaseConnection(thisConnection)
                 throw StORMError.error(thisConnection.server.errorMessage())
             }
 

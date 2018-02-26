@@ -82,7 +82,7 @@ final public class ConnectionPool: CustomStringConvertible {
     
     private func getUsableConnection() -> MySQLConnect? {
                 
-        for c in pool {
+        for (index, c) in pool.enumerated().reversed() {
             if c.isInUse == false && c.ping() == true {
                 c.isInUse = true
                 return c
@@ -90,6 +90,7 @@ final public class ConnectionPool: CustomStringConvertible {
             
             if c.isInUse == false && c.ping() == false {
                 print("broken")
+                pool.remove(at: index)
             }
             
         }
