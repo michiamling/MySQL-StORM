@@ -7,7 +7,7 @@
 //
 
 import StORM
-import MySQL
+import PerfectMySQL
 import PerfectLogger
 import Dispatch
 

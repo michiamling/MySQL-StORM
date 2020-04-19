@@ -13,7 +13,7 @@ import Dispatch
 #endif
 
 import StORM
-import MySQL
+import PerfectMySQL
 
 final public class ConnectionPool: CustomStringConvertible {
     

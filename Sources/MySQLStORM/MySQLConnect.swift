@@ -7,7 +7,7 @@
 //
 
 import StORM
-import MySQL
+import PerfectMySQL
 import PerfectLogger
 
 /// Base connector class, inheriting from StORMConnect.
@@ -40,7 +40,7 @@ open class MySQLConnect: StORMConnect {
 	}
 
     public func ping() -> Bool {
-        return server.ping
+        return server.ping()
         //return true
     }
 
